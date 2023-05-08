@@ -87,6 +87,8 @@ struct ContentView: View {
     @State var value = ""
     @State var ans = ""
     @State var currNum = 0
+    @State var input = ""
+    @State var currOp = ""
     
     let buttons: [[CalculatorButton]] = [
         [.exp2, .exp3, .exp, .lbracket, .rbracket, .clear, .plusminus, .percent, .divide],
@@ -156,16 +158,20 @@ struct ContentView: View {
         case .clear:
             value = ""
         case .plusminus:
-            if (value[value.startIndex] != "-") {
-                value = "-" + value
-            } else {
-                value.removeFirst()
+            if (value != "") {
+                if (value[value.startIndex] != "-") {
+                    value = "-" + value
+                } else {
+                    value.removeFirst()
+                }
             }
         case .exp, .exp2, .exp3, .ln, .log2, .log, .logx, .eexp, .inv, .abs, .sin, .cos, .tan, .tenexp, .csc, .sec, .cot:
-            specialOp()
+            specialOp(operation: button)
         default:
             let number = button.rawValue
-            value = value + String(number)
+            input = String(number)
+            value = value + input
+            normalOp(operation: button)
         }
     }
     
@@ -173,8 +179,23 @@ struct ContentView: View {
         
     }
     
-    func specialOp() {
+    func specialOp(operation: CalculatorButton) {
         
+    }
+    
+    func normalOp(operation: CalculatorButton) {
+        switch operation {
+        case .add:
+            currOp = "+"
+        case .subtract:
+            currOp = "-"
+        case .multiply:
+            currOp = "*"
+        case .divide:
+            currOp = "/"
+        default:
+            break
+        }
     }
     
     func buttonWidth(item: CalculatorButton) -> CGFloat {
