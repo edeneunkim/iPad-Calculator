@@ -7,6 +7,44 @@
 
 import SwiftUI
 
+struct numStack {
+    var items: [String] = []
+    
+    func peek() -> String {
+        guard let topElement = items.first else { fatalError("Stack empty")}
+        return topElement
+    }
+    
+    func peekBottom() -> String {
+        guard let bottomElement = items.last else { fatalError("Stack empty")}
+        return bottomElement
+    }
+    
+    mutating func pop() -> String {
+        return items.removeFirst()
+    }
+
+    mutating func push(element: String) {
+        items.insert(element, at: 0)
+    }
+    
+    mutating func update(element: String) {
+        items[0] = element
+    }
+    
+    mutating func updateBottom(element: String) {
+        items[items.endIndex - 1] = element
+    }
+    
+    func isEmpty() -> Bool {
+        return items.isEmpty
+    }
+    
+    mutating func clear() {
+        items.removeAll()
+    }
+}
+
 struct Colors {
     static let numButton = Color("NumButton")
     static let opButton = Color("OpButton")
@@ -84,14 +122,13 @@ enum CalculatorButton: String {
     
 struct ContentView: View {
     
-    @State var value = ""
+    @State var output = ""
     @State var ans = ""
-    @State var currNum = 0
-    @State var input = ""
-    @State var currOp = ""
+    @State var currNum = ""
+    @State var nums = numStack()
     
     let buttons: [[CalculatorButton]] = [
-        [.exp2, .exp3, .exp, .lbracket, .rbracket, .clear, .plusminus, .percent, .divide],
+        [.exp2, .exp3, .exp, .lbracket, .rbracket, .clear, .percent, .divide],
         [.ln, .log2, .log, .logx, .eexp, .seven, .eight, .nine, .multiply],
         [.inv, .root, .croot, .yroot, .factorial, .four, .five, .six, .subtract],
         [.abs, .sin, .cos, .tan, .e, .one, .two, .three, .add],
@@ -101,12 +138,12 @@ struct ContentView: View {
     var body: some View {
         ZStack {
             Colors.background.edgesIgnoringSafeArea(.all)
-            
+
             VStack {
                 Spacer()
                 HStack {
                     Spacer()
-                    Text(value)
+                    Text(output)
                         .bold()
                         .font(.system(size: 80))
                         .foregroundColor(Colors.buttonFont)
@@ -152,53 +189,77 @@ struct ContentView: View {
         case .equal:
             equalTap()
         case .delete:
-            if (!value.isEmpty) {
-                value.removeLast()
+            if (!output.isEmpty) {
+                output.removeLast()
             }
+            ans = ""
         case .clear:
-            value = ""
-        case .plusminus:
-            if (value != "") {
-                if (value[value.startIndex] != "-") {
-                    value = "-" + value
+            output = ""
+            ans = ""
+            currNum = ""
+            nums.clear()
+        case .zero, .one, .two, .three, .four, .five, .six, .seven, .eight, .nine, .decimal:
+            let pressed = button.rawValue
+            if (nums.isEmpty() || nums.peek() == "+" || nums.peek() == "-" || nums.peek() == "*" || nums.peek() == "/") {
+                currNum = pressed
+                nums.push(element: currNum)
+                output = output + pressed
+            } else {
+                if (pressed == ".") {
+                    if (!currNum.contains(".")) {
+                        currNum = currNum + pressed
+                        output = output + pressed
+                    }
                 } else {
-                    value.removeFirst()
+                    currNum = currNum + pressed
+                    output = output + pressed
+                }
+                if (nums.isEmpty()) {
+                    nums.push(element: currNum)
+                } else {
+                    nums.update(element: currNum)
                 }
             }
-        case .exp, .exp2, .exp3, .ln, .log2, .log, .logx, .eexp, .inv, .abs, .sin, .cos, .tan, .tenexp, .csc, .sec, .cot:
-            specialOp(operation: button)
+        case .divide, .multiply, .subtract, .add:
+            let pressed = button.rawValue
+            output = output + pressed
+            if (pressed == "+") {
+                nums.push(element: "+")
+            } else if (pressed == "-") {
+                nums.push(element: "-")
+            } else if (pressed == "×") {
+                nums.push(element: "*")
+            } else if (pressed == "÷") {
+                nums.push(element: "/")
+            }
         default:
-            let number = button.rawValue
-            input = String(number)
-            value = value + input
-            normalOp(operation: button)
+            specialOperation(op: button)
         }
     }
     
     func equalTap() {
-        
+        for numOp in nums.items {
+            print(numOp)
+        }
     }
     
-    func specialOp(operation: CalculatorButton) {
-        
-    }
-    
-    func normalOp(operation: CalculatorButton) {
-        switch operation {
+    func operation(op: CalculatorButton) {
+        switch op {
         case .add:
-            currOp = "+"
-        case .subtract:
-            currOp = "-"
-        case .multiply:
-            currOp = "*"
-        case .divide:
-            currOp = "/"
+            break
         default:
             break
         }
     }
     
+    func specialOperation(op: CalculatorButton) {
+        
+    }
+    
     func buttonWidth(item: CalculatorButton) -> CGFloat {
+        if (item == .clear) {
+            return (UIScreen.main.bounds.width - (2 * 130)) / 4
+        }
         return (UIScreen.main.bounds.width - (5 * 130)) / 5
     }
     
