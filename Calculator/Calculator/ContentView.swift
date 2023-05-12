@@ -15,11 +15,6 @@ struct numStack {
         return topElement
     }
     
-    func peekBottom() -> String {
-        guard let bottomElement = items.last else { fatalError("Stack empty")}
-        return bottomElement
-    }
-    
     mutating func pop() -> String {
         return items.removeFirst()
     }
@@ -30,10 +25,6 @@ struct numStack {
     
     mutating func update(element: String) {
         items[0] = element
-    }
-    
-    mutating func updateBottom(element: String) {
-        items[items.endIndex - 1] = element
     }
     
     func isEmpty() -> Bool {
@@ -75,7 +66,6 @@ enum CalculatorButton: String {
     case decimal = "."
     case percent = "%"
     case delete = "⌫"
-    case plusminus = "±"
     case lbracket = "("
     case rbracket = ")"
     case ln = "ln"
@@ -97,15 +87,15 @@ enum CalculatorButton: String {
     case cos = "cos"
     case tan = "tan"
     case e = "e"
-    case sec = "sec"
-    case csc = "csc"
-    case cot = "cot"
+    case arcsin = "sin\u{207B}\u{00B9}"
+    case arccos  = "cos\u{207B}\u{00B9}"
+    case arctan = "tan\u{207B}\u{00B9}"
     case pi = "π"
     
     
     var buttonColor: Color {
         switch self {
-        case .add, .subtract, .multiply, .divide, .percent, .plusminus:
+        case .add, .subtract, .multiply, .divide, .percent:
             return Colors.opButton
         case .clear:
             return Colors.clearButton
@@ -125,14 +115,17 @@ struct ContentView: View {
     @State var output = ""
     @State var ans = ""
     @State var currNum = ""
+    @State var numsOps = numStack()
     @State var nums = numStack()
+    @State var eValue = exp(1.0)
+    @State var piValue = Double.pi
     
     let buttons: [[CalculatorButton]] = [
         [.exp2, .exp3, .exp, .lbracket, .rbracket, .clear, .percent, .divide],
         [.ln, .log2, .log, .logx, .eexp, .seven, .eight, .nine, .multiply],
         [.inv, .root, .croot, .yroot, .factorial, .four, .five, .six, .subtract],
         [.abs, .sin, .cos, .tan, .e, .one, .two, .three, .add],
-        [.tenexp, .csc, .sec, .cot, .pi, .zero, .decimal, .equal, .delete]
+        [.tenexp, .arcsin, .arccos, .arctan, .pi, .zero, .decimal, .equal, .delete]
     ]
     
     var body: some View {
@@ -145,7 +138,7 @@ struct ContentView: View {
                     Spacer()
                     Text(output)
                         .bold()
-                        .font(.system(size: 80))
+                        .font(.system(size: 64))
                         .foregroundColor(Colors.buttonFont)
                 }
                 .padding()
@@ -154,7 +147,7 @@ struct ContentView: View {
                     Spacer()
                     Text(ans)
                         .bold()
-                        .font(.system(size: 48))
+                        .font(.system(size: 40))
                         .foregroundColor(.gray)
                 }
                 .padding()
@@ -187,73 +180,236 @@ struct ContentView: View {
     func tapped(button: CalculatorButton) {
         switch button {
         case .equal:
+            if (numsOps.isEmpty() || numsOps.peek() == "+" || numsOps.peek() == "-" || numsOps.peek() == "*" || numsOps.peek() == "/") {
+                break
+            }
+            calculate()
             equalTap()
         case .delete:
-            if (!output.isEmpty) {
-                output.removeLast()
-            }
-            ans = ""
+            deleteTap()
         case .clear:
-            output = ""
-            ans = ""
-            currNum = ""
-            nums.clear()
-        case .zero, .one, .two, .three, .four, .five, .six, .seven, .eight, .nine, .decimal:
-            let pressed = button.rawValue
-            if (nums.isEmpty() || nums.peek() == "+" || nums.peek() == "-" || nums.peek() == "*" || nums.peek() == "/") {
-                currNum = pressed
-                nums.push(element: currNum)
-                output = output + pressed
-            } else {
-                if (pressed == ".") {
-                    if (!currNum.contains(".")) {
-                        currNum = currNum + pressed
-                        output = output + pressed
-                    }
-                } else {
-                    currNum = currNum + pressed
-                    output = output + pressed
-                }
-                if (nums.isEmpty()) {
-                    nums.push(element: currNum)
-                } else {
-                    nums.update(element: currNum)
-                }
-            }
+            clearTap()
+        case .zero, .one, .two, .three, .four, .five, .six, .seven, .eight, .nine, .decimal, .pi, .e:
+            numTap(button: button)
         case .divide, .multiply, .subtract, .add:
-            let pressed = button.rawValue
-            output = output + pressed
-            if (pressed == "+") {
-                nums.push(element: "+")
-            } else if (pressed == "-") {
-                nums.push(element: "-")
-            } else if (pressed == "×") {
-                nums.push(element: "*")
-            } else if (pressed == "÷") {
-                nums.push(element: "/")
-            }
+            opTap(button: button)
         default:
-            specialOperation(op: button)
+            if (numsOps.isEmpty() || numsOps.peek() == "+" || numsOps.peek() == "-" || numsOps.peek() == "*" || numsOps.peek() == "/") {
+                break
+            } else {
+                specialOperation(op: button)
+            }
         }
     }
     
     func equalTap() {
-        for numOp in nums.items {
-            print(numOp)
+        output = ans
+        ans = ""
+        numsOps.clear()
+        nums.clear()
+        currNum = output
+        numsOps.push(element: currNum)
+        nums.push(element: currNum)
+    }
+    
+    func calculate() {
+        var expression = ""
+        for numOp in numsOps.items.reversed() {
+            if (numOp == "+" || numOp == "-" || numOp == "*" || numOp == "/") {
+                expression = expression + numOp
+            } else {
+                expression = expression + String(Double(numOp) ?? 0)
+            }
+        }
+        print(expression)
+        let result = NSExpression(format: expression)
+        ans = String(result.expressionValue(with: nil, context: nil) as! Double)
+        ans = formatNum(num: Double(ans) ?? 0)
+    }
+    
+    func deleteTap() {
+        if (numsOps.isEmpty()) {
+            return
+        }
+        if (numsOps.peek() == "+" || numsOps.peek() == "-" || numsOps.peek() == "*" || numsOps.peek() == "/") {
+            _ = numsOps.pop()
+            output.removeLast()
+        } else {
+            currNum.removeLast()
+            output.removeLast()
+            if (currNum == "") {
+                _ = numsOps.pop()
+                _ = nums.pop()
+                if (nums.isEmpty()) {
+                    currNum = ""
+                } else {
+                    currNum = nums.peek()
+                }
+            } else {
+                numsOps.update(element: currNum)
+                nums.update(element: currNum)
+            }
+        }
+        ans = ""
+    }
+    
+    func clearTap() {
+        output = ""
+        ans = ""
+        currNum = ""
+        numsOps.clear()
+        nums.clear()
+    }
+
+    func numTap(button: CalculatorButton) {
+        var pressed = button.rawValue
+        if (numsOps.isEmpty() || numsOps.peek() == "+" || numsOps.peek() == "-" || numsOps.peek() == "*" || numsOps.peek() == "/") {
+            output = output + pressed
+            if (pressed == "π") {
+                pressed = String(piValue)
+            } else if (pressed == "e") {
+                pressed = String(eValue)
+            }
+            currNum = pressed
+            numsOps.push(element: currNum)
+            nums.push(element: currNum)
+            calculate()
+        } else {
+            if (pressed == ".") {
+                if (!currNum.contains(".")) {
+                    currNum = currNum + pressed
+                    output = output + pressed
+                }
+            } else {
+                output = output + pressed
+                if (pressed == "π") {
+                    pressed = String(piValue)
+                } else if (pressed == "e") {
+                    pressed = String(eValue)
+                }
+                currNum = currNum + pressed
+            }
+            if (numsOps.isEmpty()) {
+                numsOps.push(element: currNum)
+                nums.push(element: currNum)
+            } else {
+                numsOps.update(element: currNum)
+                nums.update(element: currNum)
+            }
         }
     }
     
-    func operation(op: CalculatorButton) {
+    func opTap(button: CalculatorButton) {
+        let pressed = button.rawValue
+        if (output == "" && (pressed == "+" || pressed == "*" || pressed == "/")) {
+            return
+        }
+        output = output + pressed
+        if (pressed == "+") {
+            numsOps.push(element: "+")
+        } else if (pressed == "-") {
+            numsOps.push(element: "-")
+        } else if (pressed == "×") {
+            numsOps.push(element: "*")
+        } else if (pressed == "÷") {
+            numsOps.push(element: "/")
+        }
+    }
+    
+    
+    func specialOperation(op: CalculatorButton) {
+        var num = Double(currNum) ?? 0
         switch op {
-        case .add:
-            break
+        case .exp2:
+            num = pow(num, 2)
+        case .exp3:
+            num = pow(num, 3)
+        case .ln:
+            if (num <= 0) {
+                break
+            }
+            num = log(num)
+        case .log2:
+            if (num <= 0) {
+                break
+            }
+            num = log2(num)
+        case .log:
+            if (num <= 0) {
+                break
+            }
+            num = log10(num)
+        case .eexp:
+            num = pow(eValue, num)
+        case .inv:
+            if (num == 0) {
+                break
+            }
+            num = pow(num, -1)
+        case .root:
+            if (num < 0) {
+                break
+            }
+            num = sqrt(num)
+        case .croot:
+            num = cbrt(num)
+        case .factorial:
+            if (num.truncatingRemainder(dividingBy: 1) == 0) {
+                num = factorialFunc(number: Int(num))
+            }
+        case .abs:
+            num = abs(num)
+        case .sin:
+            num = sin(num)
+        case .cos:
+            num = cos(num)
+        case .tan:
+            num = tan(num)
+        case .tenexp:
+            num = pow(10, num)
+        case .arcsin:
+            if (num > 1 || num < -1) {
+                break
+            }
+            num = asin(num)
+        case .arccos:
+            if (num > 1 || num < -1) {
+                break
+            }
+            num = acos(num)
+        case .arctan:
+            num = atan(num)
         default:
             break
         }
+        let result = formatNum(num: num)
+        numsOps.update(element: result)
+        nums.update(element: result)
+        output = String(output.dropLast(currNum.count))
+        output = output + result
+        calculate()
     }
     
-    func specialOperation(op: CalculatorButton) {
-        
+    func factorialFunc(number: Int) -> Double {
+        var result = 1
+        if (number > 1) {
+            for i in 1...number {
+                result *= i
+            }
+        }
+        return Double(result)
+    }
+    
+    func formatNum(num: Double) -> String {
+        let intNum = String(Int(num))
+        let doubleNum = String(num)
+        let decimalDigits = doubleNum.count - intNum.count
+        if (num.truncatingRemainder(dividingBy: 1) == 0) {
+            return String(format: "%.0f", num)
+        } else if (decimalDigits >= 6) {
+            return String(format: "%.6f", num)
+        }
+        return String(num)
     }
     
     func buttonWidth(item: CalculatorButton) -> CGFloat {
