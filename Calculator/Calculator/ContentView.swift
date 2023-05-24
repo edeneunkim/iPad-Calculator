@@ -191,7 +191,7 @@ struct ContentView: View {
             clearTap()
         case .zero, .one, .two, .three, .four, .five, .six, .seven, .eight, .nine, .decimal, .pi, .e:
             numTap(button: button)
-        case .divide, .multiply, .subtract, .add, .lbracket, .rbracket:
+        case .divide, .multiply, .subtract, .add:
             opTap(button: button)
         default:
             if (numsOps.isEmpty() || numsOps.peek() == "+" || numsOps.peek() == "-" || numsOps.peek() == "*" || numsOps.peek() == "/") {
