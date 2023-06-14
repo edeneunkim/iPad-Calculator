@@ -117,6 +117,7 @@ struct ContentView: View {
     @State var currNum = ""
     @State var numsOps = numStack()
     @State var nums = numStack()
+    @State var bracketStack = numStack()
     @State var eValue = exp(1.0)
     @State var piValue = Double.pi
     
@@ -193,6 +194,8 @@ struct ContentView: View {
             numTap(button: button)
         case .divide, .multiply, .subtract, .add:
             opTap(button: button)
+        case .lbracket, .rbracket:
+            bracketTap(button: button)
         default:
             if (numsOps.isEmpty() || numsOps.peek() == "+" || numsOps.peek() == "-" || numsOps.peek() == "*" || numsOps.peek() == "/") {
                 break
@@ -211,20 +214,22 @@ struct ContentView: View {
         numsOps.push(element: currNum)
         nums.push(element: currNum)
     }
-    
+ 
     func calculate() {
         var expression = ""
         for numOp in numsOps.items.reversed() {
-            if (numOp == "+" || numOp == "-" || numOp == "*" || numOp == "/") {
+            if (numOp == "+" || numOp == "-" || numOp == "*" || numOp == "/" || numOp == "(" || numOp == ")") {
                 expression = expression + numOp
             } else {
                 expression = expression + String(Double(numOp) ?? 0)
             }
         }
         print(expression)
-        let result = NSExpression(format: expression)
-        ans = String(result.expressionValue(with: nil, context: nil) as! Double)
-        ans = formatNum(num: Double(ans) ?? 0)
+        if (bracketStack.isEmpty()) {
+            let result = NSExpression(format: expression)
+            ans = String(result.expressionValue(with: nil, context: nil) as! Double)
+            ans = formatNum(num: Double(ans) ?? 0)
+        }
     }
     
     func deleteTap() {
@@ -259,11 +264,12 @@ struct ContentView: View {
         currNum = ""
         numsOps.clear()
         nums.clear()
+        bracketStack.clear()
     }
 
     func numTap(button: CalculatorButton) {
         var pressed = button.rawValue
-        if (numsOps.isEmpty() || numsOps.peek() == "+" || numsOps.peek() == "-" || numsOps.peek() == "*" || numsOps.peek() == "/") {
+        if (numsOps.isEmpty() || numsOps.peek() == "+" || numsOps.peek() == "-" || numsOps.peek() == "*" || numsOps.peek() == "/" || numsOps.peek() == "(" || numsOps.peek() == ")") {
             output = output + pressed
             if (pressed == "π") {
                 pressed = String(piValue)
@@ -316,6 +322,20 @@ struct ContentView: View {
         }
     }
     
+    func bracketTap(button: CalculatorButton) {
+        var pressed = button.rawValue
+        if (pressed == "(") {
+            bracketStack.push(element: "(")
+            numsOps.push(element: "(")
+            output = output + pressed
+        } else if (pressed == ")") {
+            if (!bracketStack.isEmpty()) {
+                _ = bracketStack.pop()
+                numsOps.push(element: ")")
+                output = output + pressed
+            }
+        }
+    }
     
     func specialOperation(op: CalculatorButton) {
         var num = Double(currNum) ?? 0
@@ -379,6 +399,8 @@ struct ContentView: View {
             num = acos(num)
         case .arctan:
             num = atan(num)
+        case .percent:
+            num = num * 0.01
         default:
             break
         }
