@@ -357,7 +357,7 @@ struct ContentView: View {
     func specialOperation(op: CalculatorButton) {
         let curr = numsOps.peek()
         if (curr == "+" || curr == "-" || curr == "*" || curr == "/" || curr == "(" || curr == ")") {
-            
+            return
         }
         var num = Double(currNum) ?? 0
         switch op {
