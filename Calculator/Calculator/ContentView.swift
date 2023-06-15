@@ -206,6 +206,9 @@ struct ContentView: View {
     }
     
     func equalTap() {
+        if (ans == "") {
+            return
+        }
         output = ans
         ans = ""
         numsOps.clear()
@@ -224,11 +227,14 @@ struct ContentView: View {
                 expression = expression + String(Double(numOp) ?? 0)
             }
         }
-        print(expression)
-        if (bracketStack.isEmpty()) {
-            let result = NSExpression(format: expression)
-            ans = String(result.expressionValue(with: nil, context: nil) as! Double)
-            ans = formatNum(num: Double(ans) ?? 0)
+        if (bracketStack.isEmpty() && expression != "") {
+            if (numsOps.peek() != "+" && numsOps.peek() != "-" && numsOps.peek() != "*" && numsOps.peek() != "/" && numsOps.peek() != "(") {
+                let result = NSExpression(format: expression)
+                ans = String(result.expressionValue(with: nil, context: nil) as! Double)
+                ans = formatNum(num: Double(ans) ?? 0)
+            }
+        } else {
+           ans = ""
         }
     }
     
@@ -236,7 +242,12 @@ struct ContentView: View {
         if (numsOps.isEmpty()) {
             return
         }
-        if (numsOps.peek() == "+" || numsOps.peek() == "-" || numsOps.peek() == "*" || numsOps.peek() == "/") {
+        if (numsOps.peek() == "+" || numsOps.peek() == "-" || numsOps.peek() == "*" || numsOps.peek() == "/" || numsOps.peek() == "(" || numsOps.peek() == ")") {
+            if (numsOps.peek() == "(") {
+                _ = bracketStack.pop()
+            } else if (numsOps.peek() == ")") {
+                bracketStack.push(element: "(")
+            }
             _ = numsOps.pop()
             output.removeLast()
         } else {
@@ -255,7 +266,7 @@ struct ContentView: View {
                 nums.update(element: currNum)
             }
         }
-        ans = ""
+        calculate()
     }
     
     func clearTap() {
@@ -279,7 +290,6 @@ struct ContentView: View {
             currNum = pressed
             numsOps.push(element: currNum)
             nums.push(element: currNum)
-            calculate()
         } else {
             if (pressed == ".") {
                 if (!currNum.contains(".")) {
@@ -303,12 +313,18 @@ struct ContentView: View {
                 nums.update(element: currNum)
             }
         }
+        calculate()
     }
     
     func opTap(button: CalculatorButton) {
         let pressed = button.rawValue
-        if (output == "" && (pressed == "+" || pressed == "*" || pressed == "/")) {
+        if (output == "" && (pressed == "+" || pressed == "×" || pressed == "÷")) {
             return
+        }
+        if (output == "" || numsOps.peek() == "+" || numsOps.peek() == "-" || numsOps.peek() == "*" || numsOps.peek() == "/" || numsOps.peek() == "(") {
+            if (pressed != "-") {
+                return
+            }
         }
         output = output + pressed
         if (pressed == "+") {
@@ -323,21 +339,26 @@ struct ContentView: View {
     }
     
     func bracketTap(button: CalculatorButton) {
-        var pressed = button.rawValue
+        let pressed = button.rawValue
         if (pressed == "(") {
             bracketStack.push(element: "(")
             numsOps.push(element: "(")
             output = output + pressed
         } else if (pressed == ")") {
-            if (!bracketStack.isEmpty()) {
+            if (!bracketStack.isEmpty() && numsOps.peek() != "+" && numsOps.peek() != "-" && numsOps.peek() != "*" && numsOps.peek() != "/" && numsOps.peek() != "(") {
                 _ = bracketStack.pop()
                 numsOps.push(element: ")")
                 output = output + pressed
             }
         }
+        calculate()
     }
     
     func specialOperation(op: CalculatorButton) {
+        let curr = numsOps.peek()
+        if (curr == "+" || curr == "-" || curr == "*" || curr == "/" || curr == "(" || curr == ")") {
+            
+        }
         var num = Double(currNum) ?? 0
         switch op {
         case .exp2:
