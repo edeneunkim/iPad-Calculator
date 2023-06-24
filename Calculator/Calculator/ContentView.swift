@@ -77,7 +77,7 @@ enum CalculatorButton: String {
     case exp = "xʸ"
     case eexp = "eˣ"
     case tenexp = "10ˣ"
-    case inv = "1/x"
+    case inv = "x\u{207B}\u{00B9}"
     case root = "√"
     case croot = "³√"
     case yroot = "ʸ√"
@@ -120,6 +120,7 @@ struct ContentView: View {
     @State var bracketStack = numStack()
     @State var eValue = exp(1.0)
     @State var piValue = Double.pi
+    @State var currOp = ""
     
     let buttons: [[CalculatorButton]] = [
         [.exp2, .exp3, .exp, .lbracket, .rbracket, .clear, .percent, .divide],
@@ -196,6 +197,8 @@ struct ContentView: View {
             opTap(button: button)
         case .lbracket, .rbracket:
             bracketTap(button: button)
+        case .exp, .logx, .yroot:
+            multipleNumOperation(op: button)
         default:
             if (numsOps.isEmpty() || numsOps.peek() == "+" || numsOps.peek() == "-" || numsOps.peek() == "*" || numsOps.peek() == "/") {
                 break
@@ -216,6 +219,7 @@ struct ContentView: View {
         currNum = output
         numsOps.push(element: currNum)
         nums.push(element: currNum)
+        currOp = ""
     }
  
     func calculate() {
@@ -276,10 +280,17 @@ struct ContentView: View {
         numsOps.clear()
         nums.clear()
         bracketStack.clear()
+        currOp = ""
     }
 
     func numTap(button: CalculatorButton) {
         var pressed = button.rawValue
+        if (currOp != "" && !numsOps.isEmpty() && numsOps.peek() != "+" && numsOps.peek() != "-" && numsOps.peek() != "*" && numsOps.peek() != "/" && numsOps.peek() != "(" && numsOps.peek() != ")") {
+            if (pressed != "." || pressed != "π" || pressed != "e") {
+                multipleNumOpNumTap(pressed: pressed)
+                return
+            }
+        }
         if (numsOps.isEmpty() || numsOps.peek() == "+" || numsOps.peek() == "-" || numsOps.peek() == "*" || numsOps.peek() == "/" || numsOps.peek() == "(" || numsOps.peek() == ")") {
             output = output + pressed
             if (pressed == "π") {
@@ -313,6 +324,24 @@ struct ContentView: View {
                 nums.update(element: currNum)
             }
         }
+        calculate()
+    }
+    
+    func multipleNumOpNumTap(pressed: String) {
+        output.removeLast(currNum.count)
+        if (currOp == "exp") {
+            currNum = String(pow(Double(currNum) ?? 0, Double(pressed) ?? 0))
+        } else if (currOp == "log") {
+            currNum = String((log(Double(currNum) ?? 0)) / log(Double(pressed) ?? 0))
+        } else if (currOp == "root") {
+            let inverse = 1 / (Double(pressed) ?? 0)
+            currNum = String(pow(Double(currNum) ?? 0, inverse))
+        }
+        currOp = ""
+        currNum = formatNum(num: Double(currNum) ?? 0)
+        numsOps.update(element: currNum)
+        nums.update(element: currNum)
+        output = output + currNum
         calculate()
     }
     
@@ -442,6 +471,19 @@ struct ContentView: View {
             }
         }
         return Double(result)
+    }
+    
+    func multipleNumOperation(op: CalculatorButton) {
+        switch op {
+        case .exp:
+            currOp = "exp"
+        case .logx:
+            currOp = "log"
+        case .yroot:
+            currOp = "root"
+        default:
+            break
+        }
     }
     
     func formatNum(num: Double) -> String {
