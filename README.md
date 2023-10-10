@@ -1,7 +1,7 @@
 # iPad-Calculator
 A calculator app programmed and designed specifically for the iPad.
 ## Introduction
-This is a calculator app for iPad that I am making as a personal project to learn how to use Swift and XCode to make iOS apps. Since the iPad does not have a dedicated calculator app, I thought that making a calculator for the iPad would be a fun and useful way for me to learn Swift while creating an important app missing on the iPad. I thought that a calculator would look and function better when used in landscape mode, so I have locked the calculator app to display in landscape mode only. This app is not completed yet as the calculation part needs to be coded. I have completed designing the calculator and showing the correct output when the user clicks on the buttons, however I am working on getting the calculations to work. As I do not have much experience working with Swift and am still learning the language, it will take some time for me to understand how I can implement a working calculator.
+This is a calculator app for iPad that I am making as a personal project to learn how to use Swift and XCode to make iOS apps. Since the iPad does not have a dedicated calculator app, I thought that making a calculator for the iPad would be a fun and useful way for me to learn Swift while creating an important app missing on the iPad. I thought that a calculator would look and function better when used in landscape mode, so I have locked the calculator app to display in landscape mode only. 
 ## Technologies
 Swift
 iOS 16.4
