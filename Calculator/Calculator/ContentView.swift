@@ -7,35 +7,53 @@
 
 import SwiftUI
 
+/// Data structure for the mathematical expression.
 struct numStack {
     var items: [String] = []
     
+    /// Returns the element at the top of numStack.
+    ///
+    /// - Returns: Element at the top of numStack.
     func peek() -> String {
         guard let topElement = items.first else { fatalError("Stack empty")}
         return topElement
     }
     
+    /// Removes and returns the element at the top of numStack.
+    ///
+    /// - Returns: Element that was at the top of the numStack and popped.
     mutating func pop() -> String {
         return items.removeFirst()
     }
 
+    /// Pushes element into the top of the numStack.
+    ///
+    ///  - Parameter element: element to be put into numStack.
     mutating func push(element: String) {
         items.insert(element, at: 0)
     }
     
+    /// Updates the item at the top of the numStack to element.
+    ///
+    ///  - Parameter element: element that numStack updates to.
     mutating func update(element: String) {
         items[0] = element
     }
     
+    /// Returns True if numStack is empty.
+    ///
+    /// - Returns: True if numStack is empty, False otherwise.
     func isEmpty() -> Bool {
         return items.isEmpty
     }
     
+    /// Clears the numStack.
     mutating func clear() {
         items.removeAll()
     }
 }
 
+/// Struct for representing colors for different buttons
 struct Colors {
     static let numButton = Color("NumButton")
     static let opButton = Color("OpButton")
@@ -46,6 +64,7 @@ struct Colors {
     static let defaultButton = Color("DefaultButton")
 }
 
+/// Enum for representing different calculator buttons.
 enum CalculatorButton: String {
     case one = "1"
     case two = "2"
@@ -92,7 +111,7 @@ enum CalculatorButton: String {
     case arctan = "tan\u{207B}\u{00B9}"
     case pi = "π"
     
-    
+    /// Changes button color based on button label.
     var buttonColor: Color {
         switch self {
         case .add, .subtract, .multiply, .divide, .percent:
@@ -112,6 +131,7 @@ enum CalculatorButton: String {
     
 struct ContentView: View {
     
+    // initial states
     @State var output = ""
     @State var ans = ""
     @State var currNum = ""
@@ -122,6 +142,7 @@ struct ContentView: View {
     @State var piValue = Double.pi
     @State var currOp = ""
     
+    // layout for button rows
     let buttons: [[CalculatorButton]] = [
         [.exp2, .exp3, .exp, .lbracket, .rbracket, .clear, .percent, .divide],
         [.ln, .log2, .log, .logx, .eexp, .seven, .eight, .nine, .multiply],
@@ -130,6 +151,7 @@ struct ContentView: View {
         [.tenexp, .arcsin, .arccos, .arctan, .pi, .zero, .decimal, .equal, .delete]
     ]
     
+    // display view
     var body: some View {
         ZStack {
             Colors.background.edgesIgnoringSafeArea(.all)
@@ -179,6 +201,9 @@ struct ContentView: View {
         }
     }
     
+    /// Performs different actions based on the button pressed.
+    ///
+    ///  - Parameter button: CalculatorButton object that was tapped
     func tapped(button: CalculatorButton) {
         switch button {
         case .equal:
@@ -194,7 +219,7 @@ struct ContentView: View {
         case .zero, .one, .two, .three, .four, .five, .six, .seven, .eight, .nine, .decimal, .pi, .e:
             numTap(button: button)
         case .divide, .multiply, .subtract, .add:
-            opTap(button: button)
+            opTap(op: button)
         case .lbracket, .rbracket:
             bracketTap(button: button)
         case .exp, .logx, .yroot:
@@ -208,6 +233,7 @@ struct ContentView: View {
         }
     }
     
+    /// Helper function for performing equals operation when equals button is tapped.
     func equalTap() {
         if (ans == "") {
             return
@@ -222,6 +248,7 @@ struct ContentView: View {
         currOp = ""
     }
  
+    /// Calculates the mathematical expression present in the numsOps stack if valid.
     func calculate() {
         var expression = ""
         for numOp in numsOps.items.reversed() {
@@ -242,6 +269,7 @@ struct ContentView: View {
         }
     }
     
+    /// Deletes the last element of the expression outputted on the calculator and the top of the corresponding stack.
     func deleteTap() {
         if (numsOps.isEmpty()) {
             return
@@ -273,6 +301,7 @@ struct ContentView: View {
         calculate()
     }
     
+    /// Clears the output on the calculator and the stack when clear button tapped.
     func clearTap() {
         output = ""
         ans = ""
@@ -283,6 +312,9 @@ struct ContentView: View {
         currOp = ""
     }
 
+    /// Adds the button tapped to the output and to the stack if valid.
+    ///
+    /// - Parameter button: button pressed.
     func numTap(button: CalculatorButton) {
         var pressed = button.rawValue
         if (currOp != "" && !numsOps.isEmpty() && numsOps.peek() != "+" && numsOps.peek() != "-" && numsOps.peek() != "*" && numsOps.peek() != "/" && numsOps.peek() != "(" && numsOps.peek() != ")") {
@@ -327,6 +359,9 @@ struct ContentView: View {
         calculate()
     }
     
+    /// Performs operations for complex operations involving multiple inputs (xʸ, logₓ, ʸ√) based on button pressed.
+    ///
+    /// - Parameter pressed: type of operation to perform.
     func multipleNumOpNumTap(pressed: String) {
         output.removeLast(currNum.count)
         if (currOp == "exp") {
@@ -345,8 +380,11 @@ struct ContentView: View {
         calculate()
     }
     
-    func opTap(button: CalculatorButton) {
-        let pressed = button.rawValue
+    /// Performs simple operations based on button pressed.
+    ///
+    /// - Parameter op: operation button pressed.
+    func opTap(op: CalculatorButton) {
+        let pressed = op.rawValue
         if (output == "" && (pressed == "+" || pressed == "×" || pressed == "÷")) {
             return
         }
@@ -367,6 +405,9 @@ struct ContentView: View {
         }
     }
     
+    /// Adds bracket to expression if valid and performs necessary calculations.
+    ///
+    /// - Parameter button: button pressed.
     func bracketTap(button: CalculatorButton) {
         let pressed = button.rawValue
         if (pressed == "(") {
@@ -383,6 +424,9 @@ struct ContentView: View {
         calculate()
     }
     
+    /// Performs complex operations involving a number input based on button pressed.
+    ///
+    /// - Parameter op: type of operation to perform.
     func specialOperation(op: CalculatorButton) {
         let curr = numsOps.peek()
         if (curr == "+" || curr == "-" || curr == "*" || curr == "/" || curr == "(" || curr == ")") {
@@ -463,6 +507,10 @@ struct ContentView: View {
         calculate()
     }
     
+    /// Returns the factorial of number.
+    ///
+    /// - Parameter number: number to perform factorial on
+    /// - Returns: the factorial of number.
     func factorialFunc(number: Int) -> Double {
         var result = 1
         if (number > 1) {
@@ -473,6 +521,9 @@ struct ContentView: View {
         return Double(result)
     }
     
+    /// Helper function that sets the type of complex operation involving mutiple inputs.
+    ///
+    ///  - Parameter op: type of operation to perform
     func multipleNumOperation(op: CalculatorButton) {
         switch op {
         case .exp:
@@ -486,7 +537,12 @@ struct ContentView: View {
         }
     }
     
+    /// Formats decimal numbers to non-decimal numbers if decimal is .0 or sets decimal digits to 6.
+    ///
+    /// - Parameter num: decimal number to be formatted.
+    /// - Returns: a string representation of the formatted number.
     func formatNum(num: Double) -> String {
+
         let intNum = String(Int(num))
         let doubleNum = String(num)
         let decimalDigits = doubleNum.count - intNum.count
@@ -498,6 +554,9 @@ struct ContentView: View {
         return String(num)
     }
     
+    /// Sets button width
+    ///
+    ///  - Returns: button with set width
     func buttonWidth(item: CalculatorButton) -> CGFloat {
         if (item == .clear) {
             return (UIScreen.main.bounds.width - (2 * 130)) / 4
@@ -505,6 +564,9 @@ struct ContentView: View {
         return (UIScreen.main.bounds.width - (5 * 130)) / 5
     }
     
+    /// Sets button height
+    ///
+    ///  - Returns: button with set height
     func buttonHeight() -> CGFloat {
         return (UIScreen.main.bounds.width - (5 * 130)) / 5
     }
