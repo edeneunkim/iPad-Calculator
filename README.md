@@ -13,6 +13,7 @@ Since the calculator is not completed as of yet, only some of the buttons work, 
 * User presses 6, then presses ʸ√, then presses 216, which shows 3
 ## Files
 Most of the code is in the ContentView file in the Calculator package. The custom colors that I created are in the Assets file. 
+To view images of the calculator in use, you can check the Screenshots folder.
 ## Sources
 I used the following videos as a guideline to learn how to code a calculator with Swift:
 * https://www.youtube.com/watch?v=A2gGNTKo_q8
